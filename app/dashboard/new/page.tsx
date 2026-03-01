@@ -16,7 +16,7 @@ export default function NewArticlePage() {
     setLoading(true);
     try {
       await api.create(data as any);
-      setToast({ message: `Article ${data.status === 'published' ? 'published' : 'saved as draft'} successfully!`, type: 'success' });
+      setToast({ message: `Article ${data.status === 'publish' ? 'publish' : 'saved as draft'} successfully!`, type: 'success' });
       setTimeout(() => router.push('/dashboard'), 1200);
     } catch {
       setToast({ message: 'Failed to save article. Please try again.', type: 'error' });

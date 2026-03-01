@@ -2,28 +2,35 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { api, Article } from '@/lib/api';
-import { Pencil, Trash2, Loader2, RefreshCw } from 'lucide-react';
+import { Pencil, Trash2, Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import Toast from '@/components/Toast';
 
-type Tab = 'publish' | 'draft' | 'thrash';
+type Tab = 'publish' | 'draft' | 'trash';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'publish', label: 'Published' },
   { key: 'draft', label: 'Drafts' },
-  { key: 'thrash', label: 'Trashed' },
+  { key: 'trash', label: 'Trashed' },
 ];
+
+const LIMIT = 100;
 
 export default function DashboardPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [tab, setTab] = useState<Tab>('publish');
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (currentPage: number) => {
     setLoading(true);
     try {
-      const data = await api.getAll();
-      setArticles(data || []);
+      const offset = (currentPage - 1) * LIMIT;
+      const data = await api.getAll(LIMIT, offset);
+      const result = data || [];
+      setArticles(result);
+      setHasMore(result.length === LIMIT);
     } catch {
       setToast({ message: 'Failed to load articles', type: 'error' });
     } finally {
@@ -31,15 +38,36 @@ export default function DashboardPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load(page);
+  }, [load, page]);
+
+  const handleTabChange = (newTab: Tab) => {
+    setTab(newTab);
+    setPage(1);
+    load(1);
+  };
+
+  const handlePrev = () => {
+    if (page > 1) setPage(p => p - 1);
+  };
+
+  const handleNext = () => {
+    if (hasMore) setPage(p => p + 1);
+  };
+
+  const handleRefresh = () => {
+    setPage(1);
+    load(1);
+  };
 
   const filtered = articles.filter(a => a.status === tab);
 
   const handleTrash = async (article: Article) => {
     try {
-      await api.update(article.id, { ...article, status: 'trashed' });
+      await api.update(article.id, { ...article, status: 'trash' });
       setToast({ message: 'Article moved to trash', type: 'success' });
-      load();
+      load(page);
     } catch {
       setToast({ message: 'Failed to trash article', type: 'error' });
     }
@@ -49,7 +77,7 @@ export default function DashboardPage() {
     try {
       await api.update(article.id, { ...article, status: 'draft' });
       setToast({ message: 'Article restored to drafts', type: 'success' });
-      load();
+      load(page);
     } catch {
       setToast({ message: 'Failed to restore article', type: 'error' });
     }
@@ -60,7 +88,10 @@ export default function DashboardPage() {
     try {
       await api.delete(id);
       setToast({ message: 'Article permanently deleted', type: 'success' });
-      load();
+      // Kalau hapus item terakhir di halaman > 1, mundur satu halaman
+      const newPage = filtered.length === 1 && page > 1 ? page - 1 : page;
+      setPage(newPage);
+      load(newPage);
     } catch {
       setToast({ message: 'Failed to delete article', type: 'error' });
     }
@@ -75,11 +106,13 @@ export default function DashboardPage() {
         <div className="flex items-baseline justify-between">
           <div>
             <h1 className="font-display text-3xl text-[#282318] font-semibold">All Posts</h1>
-            <p className="text-sm text-[#9a8b6a] mt-1 font-body">{articles.length} articles total</p>
+            <p className="text-sm text-[#9a8b6a] mt-1 font-body">
+              {/* Halaman {page} · {LIMIT} artikel per halaman */}
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={load}
+              onClick={handleRefresh}
               className="flex items-center gap-2 px-4 py-2 border border-[#ddd8c8] rounded-sm text-sm text-[#6e624b] hover:bg-[#eeebe3] transition-colors"
             >
               <RefreshCw size={14} />
@@ -103,7 +136,7 @@ export default function DashboardPage() {
             return (
               <button
                 key={t.key}
-                onClick={() => setTab(t.key)}
+                onClick={() => handleTabChange(t.key)}
                 className={`px-6 py-3 text-sm font-body font-medium border-b-2 transition-all -mb-px
                   ${tab === t.key
                     ? 'border-[#c84b31] text-[#c84b31]'
@@ -159,7 +192,7 @@ export default function DashboardPage() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      {tab === 'thrash' ? (
+                      {tab === 'trash' ? (
                         <>
                           <button
                             onClick={() => handleRestore(article)}
@@ -200,6 +233,48 @@ export default function DashboardPage() {
             </tbody>
           </table>
         )}
+
+        {/* Pagination Footer */}
+        {/* {!loading && (
+          <div className="flex items-center justify-between px-6 py-4 border-t border-[#eeebe3]">
+   
+            <p className="text-xs font-mono text-[#b0a384]">
+              offset{' '}
+              <span className="text-[#6e624b] font-semibold">{(page - 1) * LIMIT}</span>
+              {' '}· limit{' '}
+              <span className="text-[#6e624b] font-semibold">{LIMIT}</span>
+              {' '}· page{' '}
+              <span className="text-[#6e624b] font-semibold">{page}</span>
+            </p>
+
+   
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrev}
+                disabled={page === 1}
+                className="flex items-center gap-1.5 px-4 py-2 border border-[#ddd8c8] rounded-sm text-sm text-[#6e624b]
+                  hover:bg-[#eeebe3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={14} />
+                Prev
+              </button>
+
+              <span className="w-9 h-9 flex items-center justify-center bg-[#282318] text-white text-sm font-mono rounded-sm select-none">
+                {page}
+              </span>
+
+              <button
+                onClick={handleNext}
+                disabled={!hasMore}
+                className="flex items-center gap-1.5 px-4 py-2 border border-[#ddd8c8] rounded-sm text-sm text-[#6e624b]
+                  hover:bg-[#eeebe3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )} */}
       </div>
     </div>
   );

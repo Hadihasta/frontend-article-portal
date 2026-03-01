@@ -17,10 +17,10 @@ export default function ArticleForm({ initialData, onPublish, onDraft, loading }
   const [category, setCategory] = useState(initialData?.category || CATEGORIES[0]);
   const [action, setAction] = useState<'publish' | 'draft' | null>(null);
 
-  const handleSubmit = async (status: 'published' | 'draft') => {
+  const handleSubmit = async (status: 'publish' | 'draft') => {
     const data = { title, content, category, status };
-    setAction(status === 'published' ? 'publish' : 'draft');
-    if (status === 'published') await onPublish(data);
+    setAction(status === 'publish' ? 'publish' : 'draft');
+    if (status === 'publish') await onPublish(data);
     else await onDraft(data);
     setAction(null);
   };
@@ -78,7 +78,7 @@ export default function ArticleForm({ initialData, onPublish, onDraft, loading }
       {/* Actions */}
       <div className="flex items-center gap-3 pt-2">
         <button
-          onClick={() => handleSubmit('published')}
+          onClick={() => handleSubmit('publish')}
           disabled={loading || !title.trim() || !content.trim()}
           className="flex items-center gap-2 px-6 py-3 bg-[#c84b31] text-white
             text-sm font-body font-medium rounded-sm

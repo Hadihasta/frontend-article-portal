@@ -31,7 +31,8 @@ export default function ArticlePreviewPage({ params }: { params: { id: string } 
     );
   }
 
-  if (!article || article.status !== 'published') {
+  // Cek status 'publish' (bukan 'published')
+  if (!article || article.status !== 'publish') {
     return (
       <div className="p-10 text-center">
         <p className="font-display text-2xl text-[#ddd8c8] italic mb-4">Article not found or not published.</p>
@@ -83,17 +84,7 @@ export default function ArticlePreviewPage({ params }: { params: { id: string } 
           {article.content}
         </div>
 
-        {/* Footer */}
-        <div className="mt-12 pt-8 border-t border-[#ddd8c8] flex items-center justify-between">
-          <span className="badge badge-published">Published</span>
-          <Link
-            href={`/dashboard/edit/${article.id}`}
-            className="flex items-center gap-1.5 text-xs font-mono text-[#9a8b6a] hover:text-[#282318] transition-colors"
-          >
-            <Edit size={12} />
-            Edit article
-          </Link>
-        </div>
+    
       </article>
     </div>
   );

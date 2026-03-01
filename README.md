@@ -15,7 +15,7 @@ Next.js 14 frontend untuk Article Portal API (Go backend).
 npm install
 
 # Copy env file dan sesuaikan
-cp .env.local.example .env.local
+cp .env.example .env
 
 # Jalankan dev server
 npm run dev
@@ -27,7 +27,7 @@ Buka [http://localhost:3000](http://localhost:3000)
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8080   # URL backend Go Anda
-NEXT_PUBLIC_API_KEY=your_api_key_here       # API Key (untuk /health endpoint)
+NEXT_PUBLIC_API_KEY=secretweapon       # API Key untuk di taruh di header  "X-API-Key"
 ```
 
 ## Fitur
@@ -64,5 +64,5 @@ NEXT_PUBLIC_API_KEY=your_api_key_here       # API Key (untuk /health endpoint)
 | DELETE | `/api/v1/article/:id` | Hapus artikel |
 
 ## Catatan
-- Field `status` pada model artikel harus ada di backend: `"published"`, `"draft"`, atau `"trashed"`
+- Field `status` pada model artikel harus ada di backend: `"publish"`, `"draft"`, atau `"trash"`
 - Pastikan backend mengaktifkan CORS (sudah ada `middlewares.CORS` di backend)

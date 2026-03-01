@@ -8,7 +8,7 @@ export interface Article {
   title: string;
   content: string;
   category: string;
-  status: string; // "published" | "draft" | "trashed"
+  status: string; // "publish" | "draft" | "trash"
   created_at?: string;
   updated_at?: string;
 }
@@ -22,11 +22,10 @@ const client = axios.create({
 });
 
 export const api = {
-  async getAll(limit = 5, offset = 0): Promise<Article[]> {
+  async getAll(limit = 10, offset = 0): Promise<Article[]> {
     const { data } = await client.get<Article[]>('/article', { params: { limit, offset } });
     return data;
   },
-
   async getById(id: number): Promise<Article> {
     const { data } = await client.get<Article>(`/article/${id}`);
     return data;

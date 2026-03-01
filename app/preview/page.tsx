@@ -4,28 +4,39 @@ import Link from 'next/link';
 import { api, Article } from '@/lib/api';
 import { Loader2, ChevronLeft, ChevronRight, Calendar, Tag } from 'lucide-react';
 
-const PER_PAGE = 6;
+const LIMIT = 5;
 
 export default function PreviewPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (currentPage: number) => {
     setLoading(true);
     try {
-      const data = await api.getAll();
-      const published = (data || []).filter(a => a.status === 'published');
+      const offset = (currentPage - 1) * LIMIT;
+      const data = await api.getAll(LIMIT, offset);
+      // Filter hanya status 'publish' di client setelah dapat data dari API
+      const published = (data || []).filter(a => a.status === 'publish');
       setArticles(published);
+      setHasMore((data || []).length === LIMIT);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load(page);
+  }, [load, page]);
 
-  const totalPages = Math.ceil(articles.length / PER_PAGE);
-  const paginated = articles.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const handlePrev = () => {
+    if (page > 1) setPage(p => p - 1);
+  };
+
+  const handleNext = () => {
+    if (hasMore) setPage(p => p + 1);
+  };
 
   const excerpt = (content: string, len = 160) =>
     content.length > len ? content.slice(0, len).trimEnd() + '…' : content;
@@ -55,7 +66,10 @@ export default function PreviewPage() {
         <div className="text-center py-24">
           <p className="font-display text-3xl text-[#ddd8c8] italic mb-3">Nothing published yet.</p>
           <p className="font-body text-sm text-[#b0a384]">Published articles will appear here as a blog.</p>
-          <Link href="/dashboard/new" className="inline-block mt-4 px-5 py-2.5 bg-[#c84b31] text-white text-sm rounded-sm hover:bg-[#a33825] transition-colors">
+          <Link
+            href="/dashboard/new"
+            className="inline-block mt-4 px-5 py-2.5 bg-[#c84b31] text-white text-sm rounded-sm hover:bg-[#a33825] transition-colors"
+          >
             Write the first article
           </Link>
         </div>
@@ -63,7 +77,7 @@ export default function PreviewPage() {
         <>
           {/* Article grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {paginated.map((article, i) => (
+            {articles.map((article, i) => (
               <article
                 key={article.id}
                 className="bg-white border border-[#ddd8c8] rounded-sm overflow-hidden group hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 fade-up"
@@ -115,48 +129,44 @@ export default function PreviewPage() {
           </div>
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 py-4 fade-up fade-up-delay-4">
+          <div className="flex items-center justify-between mt-4 fade-up fade-up-delay-4">
+            {/* Info offset */}
+            <p className="text-xs font-mono text-[#b0a384]">
+              offset{' '}
+              <span className="text-[#6e624b] font-semibold">{(page - 1) * LIMIT}</span>
+              {' '}· limit{' '}
+              <span className="text-[#6e624b] font-semibold">{LIMIT}</span>
+              {' '}· page{' '}
+              <span className="text-[#6e624b] font-semibold">{page}</span>
+            </p>
+
+            {/* Prev / page number / Next */}
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={handlePrev}
                 disabled={page === 1}
-                className="flex items-center gap-1 px-4 py-2 border border-[#ddd8c8] rounded-sm text-sm text-[#6e624b] hover:bg-[#eeebe3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 border border-[#ddd8c8] rounded-sm text-sm text-[#6e624b]
+                  hover:bg-[#eeebe3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
-                <ChevronLeft size={15} />
+                <ChevronLeft size={14} />
                 Prev
               </button>
 
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-9 h-9 rounded-sm text-sm font-mono transition-colors
-                      ${p === page
-                        ? 'bg-[#282318] text-white'
-                        : 'text-[#6e624b] hover:bg-[#eeebe3] border border-[#ddd8c8]'
-                      }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
+              <span className="w-9 h-9 flex items-center justify-center bg-[#282318] text-white text-sm font-mono rounded-sm select-none">
+                {page}
+              </span>
 
               <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="flex items-center gap-1 px-4 py-2 border border-[#ddd8c8] rounded-sm text-sm text-[#6e624b] hover:bg-[#eeebe3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                onClick={handleNext}
+                disabled={!hasMore}
+                className="flex items-center gap-1.5 px-4 py-2 border border-[#ddd8c8] rounded-sm text-sm text-[#6e624b]
+                  hover:bg-[#eeebe3] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 Next
-                <ChevronRight size={15} />
+                <ChevronRight size={14} />
               </button>
             </div>
-          )}
-
-          {/* Count info */}
-          <p className="text-center text-xs font-mono text-[#b0a384] mt-2">
-            Showing {((page - 1) * PER_PAGE) + 1}–{Math.min(page * PER_PAGE, articles.length)} of {articles.length} articles
-          </p>
+          </div>
         </>
       )}
     </div>
