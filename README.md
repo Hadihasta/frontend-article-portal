@@ -66,3 +66,6 @@ NEXT_PUBLIC_API_KEY=secretweapon       # API Key untuk di taruh di header  "X-AP
 ## Catatan
 - Field `status` pada model artikel harus ada di backend: `"publish"`, `"draft"`, atau `"trash"`
 - Pastikan backend mengaktifkan CORS (sudah ada `middlewares.CORS` di backend)
+
+
+Deployed project : https://queless.space/dashboard
