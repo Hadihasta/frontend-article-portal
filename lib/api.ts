@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://articles.zeabur.app';
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || '';
 
 export interface Article {
